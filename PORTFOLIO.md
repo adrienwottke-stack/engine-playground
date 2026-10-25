@@ -1,4 +1,4 @@
-# Adrien Thielemann · Engineering & Software
+# Adrien Wottke · Engineering & Software
 
 Ich studiere Maschinenbau und entwickle praktische Software- und Engineering-Projekte mit Unterstützung von KI-Werkzeugen. Diese Übersicht führt zu ausgewählten, bereinigten Quellcode-Arbeitsproben.
 
