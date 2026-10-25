@@ -30,3 +30,5 @@ Enthalten sind ausgewählte Quelltexte, Konfiguration und vorhandene Tests. Ausg
 ## Prüfung dieser Arbeitsprobe
 
 25. Oktober 2026: TypeScript-Prüfung und Produktionsbuild erfolgreich. Für vorhandene Regressionstests sind ausschließlich erforderliche eingefrorene Quellcode-Fixtures enthalten. Keine neue native Audio- oder Live-Abnahme.
+
+Native Laufzeitdateien und ausführbare Binärdateien sind ausgeschlossen. Die Browseransicht lässt sich separat bauen. Für den nativen Betrieb sind eine eigene Kompilierung und die im Originalprojekt beschriebenen Laufzeitabhängigkeiten erforderlich.
