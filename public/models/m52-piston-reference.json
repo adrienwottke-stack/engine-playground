@@ -1,0 +1,107 @@
+{
+  "assetId": "m52-piston-reference-v1",
+  "units": "metres",
+  "runtimeScaleToMillimetres": 1000,
+  "referenceEngine": "M52B28 / 286S1",
+  "manufacturerCad": false,
+  "authoredBy": "Original scripted reference geometry for Engine Playground",
+  "dimensions": {
+    "referenceDiameterMm": 83.97,
+    "cylinderBoreMm": 84,
+    "compressionHeightMm": 31.82,
+    "overallHeightMm": 51.8,
+    "pinDiameterMm": 22,
+    "pinLengthMm": 56,
+    "ringHeightsMm": [
+      1.5,
+      1.5,
+      2.0
+    ]
+  },
+  "approximate": [
+    "Outside diameter is a modelling reference, not a manufacturing tolerance",
+    "Skirt profile, windows, walls, bosses and webs",
+    "Ring groove axial positions and clearances",
+    "Valve recess positions, radii and tilt; only listed depths used; central 0.30 mm dish is illustrative",
+    "Pin inside diameter, retainer form, drain hole pattern and edge radii",
+    "Fine turning marks and surface roughness",
+    "No piston mass/inertia changes to the native model"
+  ],
+  "references": [
+    {
+      "url": "https://nm-germany.com/wp-content/uploads/2022/11/European_Piston_Catalog_EK1.pdf",
+      "kind": "supplier catalogue, indexed M52B28 dimensional row; original drawing unavailable"
+    },
+    {
+      "url": "https://www.kmotorshop.com/en/article-detail/view/156780/piston-with-rings-and-pin-0831600-mahle-11251432806-11251432807-1432806",
+      "kind": "retailer MAHLE product data cross-check; not manufacturer CAD"
+    },
+    {
+      "url": "native/headless/assets/engines/bmw/M52B28.mr",
+      "kind": "existing native compression height 31.82 mm, wrist-pin offset zero"
+    }
+  ],
+  "parts": [
+    {
+      "name": "piston_body",
+      "vertices": 5891,
+      "triangles": 11842
+    },
+    {
+      "name": "compression_ring_top",
+      "vertices": 2370,
+      "triangles": 4736
+    },
+    {
+      "name": "compression_ring_second",
+      "vertices": 2370,
+      "triangles": 4736
+    },
+    {
+      "name": "oil_rail_upper",
+      "vertices": 2370,
+      "triangles": 4736
+    },
+    {
+      "name": "oil_rail_lower",
+      "vertices": 2370,
+      "triangles": 4736
+    },
+    {
+      "name": "oil_expander",
+      "vertices": 3072,
+      "triangles": 6144
+    },
+    {
+      "name": "wrist_pin",
+      "vertices": 1728,
+      "triangles": 3456
+    },
+    {
+      "name": "retaining_clip_left",
+      "vertices": 700,
+      "triangles": 1396
+    },
+    {
+      "name": "retaining_clip_right",
+      "vertices": 700,
+      "triangles": 1396
+    }
+  ],
+  "triangles": 43178,
+  "generator": "scripts/build-piston.py",
+  "blenderVersion": "4.5.3 LTS",
+  "licence": "Original model and generated texture, same licence as this project; no third-party model or image redistributed",
+  "topologyValidation": {
+    "heroSolids": 9,
+    "engineSolids": 9,
+    "boundaryEdges": 0,
+    "nonmanifoldEdges": 0,
+    "componentsPerPart": 1
+  },
+  "engineLod": {
+    "triangles": 9486,
+    "file": "m52-piston-engine.glb",
+    "bytes": 422576
+  }
+}

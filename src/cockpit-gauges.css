@@ -1,0 +1,44 @@
+/* Original instrument artwork: black faces, warm printing and red needles. */
+.classic-ui .garage-cockpit-host {display:block;min-width:0;margin:0 11px 15px;border:0;background:transparent;}
+.classic-ui .cockpit-cluster {padding:14px 3px 0;border:1px solid #303235;border-radius:42px 42px 8px 8px;background:#090a0b;box-shadow:inset 0 5px 8px #000,0 2px 4px #050b1066;overflow:hidden;}
+.classic-ui .cockpit-dials {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;align-items:start;}
+.classic-ui .cockpit-dial {min-width:0;padding:0;margin:0;}
+.classic-ui .cockpit-face {display:block;width:100%;height:auto;aspect-ratio:220/212;overflow:visible;}
+.classic-ui .cockpit-bezel {fill:#111315;stroke:#292c2e;stroke-width:1.2;}
+.classic-ui .cockpit-black-face {fill:#050607;stroke:#24292e;stroke-width:2;}
+.classic-ui .cockpit-bezel-glint {fill:none;stroke:#5d6060;stroke-width:.7;opacity:.4;}
+.classic-ui .cockpit-tick {stroke:#e3e1da;stroke-width:1;}
+.classic-ui .cockpit-tick-major {stroke:#f1f0e9;stroke-width:2;}
+.classic-ui .cockpit-tick-red {stroke:#e74438;}
+.classic-ui .cockpit-red-zone {fill:none;stroke:#9e2523;stroke-width:8;stroke-linecap:butt;}
+.classic-ui .cockpit-scale-number {fill:#eeede7;font:500 17px 'Arial','Segoe UI',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.6px;}
+.classic-ui [data-cockpit-gauge=speedKmh] .cockpit-scale-number {font-size:13px;letter-spacing:-.5px;}
+.classic-ui .cockpit-number-red {fill:#ef6458;}
+.classic-ui .cockpit-face-name {fill:#d3bea0;font:600 10px var(--sans);letter-spacing:1px;}
+.classic-ui .cockpit-face-unit {fill:#d8d8cf;font:11px Arial,sans-serif;letter-spacing:.1px;}
+.classic-ui .cockpit-needle {transform-box:view-box;transform-origin:110px 108px;transform:rotate(var(--needle-angle));transition:transform 45ms linear;}
+.classic-ui .cockpit-needle-shadow {fill:#080405;opacity:.7;transform:translate(1px,2px);}
+.classic-ui .cockpit-needle-blade {fill:#ef3e32;}
+.classic-ui .cockpit-needle-highlight {fill:none;stroke:#ff8b72;stroke-width:.8;}
+.classic-ui .cockpit-needle-hub {fill:#171a1c;stroke:#363a3f;stroke-width:1.5;}
+.classic-ui .cockpit-hub-highlight {fill:#3c4043;opacity:.75;}
+.classic-ui .cockpit-digital {display:flex;justify-content:center;align-items:baseline;gap:5px;height:29px;margin:0 7px 8px;padding:5px 0;color:#ef8538;background:#22160e;border:1px solid #39291a;position:relative;font-variant-numeric:tabular-nums;}
+.classic-ui .cockpit-digital .cockpit-digital-value {font:500 18px 'Consolas',monospace;letter-spacing:.2px;}
+.classic-ui .cockpit-digital-unit {font:9px var(--mono);color:#b9aa93;}
+.classic-ui .cockpit-scale-overflow {font:12px var(--mono);color:#ef6458;}
+.classic-ui .cockpit-dial[data-available=false] .cockpit-needle {opacity:0;transition:none;}
+.classic-ui .cockpit-dial[data-available=false] .cockpit-digital {color:#8d8478;}
+.classic-ui .cockpit-dial[data-warning=true] .cockpit-digital-value {color:#ff8171;}
+.classic-ui .cockpit-cluster-foot {display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:3px 8px;padding:8px 8px 9px;border-top:1px solid #292c30;color:#d39052;font:9px var(--sans);letter-spacing:.7px;}
+.classic-ui .cockpit-rev-limit b {font-weight:400;color:#d3b79b;}
+.classic-ui .cockpit-power {display:flex;align-items:baseline;gap:4px;}
+.classic-ui .cockpit-power strong {font:500 12px 'Bahnschrift','Arial Narrow','Segoe UI',sans-serif;color:#e4cfad;font-variant-numeric:tabular-nums;}
+.classic-ui .cockpit-power>span {font:9px var(--mono);}
+@media(max-width:750px) {
+  .classic-ui .garage-cockpit-host {grid-column:1/-1;margin:3px 12px 14px;}
+  .classic-ui .cockpit-cluster {padding:7px 4px 0;}
+  .classic-ui .cockpit-digital .cockpit-digital-value {font-size:23px;}
+  .classic-ui .cockpit-digital-unit {font-size:10px;}
+  .classic-ui .cockpit-cluster-foot {padding:9px 10px;font-size:10px;}
+}
+@media(prefers-reduced-motion:reduce) {.classic-ui .cockpit-needle {transition:none;}}

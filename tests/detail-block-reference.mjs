@@ -1,0 +1,4 @@
+import {writeFile} from 'node:fs/promises';
+const ids=['jQkAAeSwhZtqHU7z','eQMAAeSwLxhqHU7z','MYEAAeSw-wlqHU7w','dowAAeSwwapqHU7z','ZIYAAeSw60JqHU7z','ibwAAeSwr0NqHU7z','iqQAAeSw16xqHU7z','LFQAAeSw1CBqHU70','i48AAeSwN6lqHU7z','lzMAAeSwXwdqHU70','PVIAAeSwJElqHU70','i40AAeSwN6lqHU7z','vdsAAeSwEs9qHU7y','byAAAeSwiSdqHU70','dc4AAeSwCpVqHU70','jJoAAeSwFyJqHU70'];
+const results=await Promise.allSettled(ids.map(async(id,index)=>{const url=`https://i.ebayimg.com/images/g/${id}/s-l1600.webp`,r=await fetch(url);if(!r.ok)throw new Error(`${index+1}: ${r.status}`);const bytes=await r.arrayBuffer();await writeFile(`evidence/detail-block-r3/ebay-178183100002/view-${index+1}.webp`,Buffer.from(bytes));return {view:index+1,url,bytes:bytes.byteLength};}));
+await writeFile('evidence/detail-block-r3/ebay-178183100002/sources.json',JSON.stringify({listing:'https://www.ebay.co.uk/itm/178183100002',retrieved:'2026-10-25',images:results},null,2));console.log(JSON.stringify(results));

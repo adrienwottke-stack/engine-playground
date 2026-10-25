@@ -1,0 +1,139 @@
+/* One quiet workbench: the complete motor is the main instrument. */
+.classic-ui {
+  --bg:#0e1921;--panel:#172936;--line:#344b59;--text:#e7edf0;--muted:#a5b7c1;
+  --quiet:#8a9eaa;--teal:#84c6ce;--amber:#f19a58;--blue:#9aadb7;
+  --sans:'Segoe UI',Arial,sans-serif;--display:'Bahnschrift','Arial Narrow','Segoe UI',sans-serif;
+  --mono:'Cascadia Mono',Consolas,monospace;
+  background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;
+}
+.classic-ui #app {min-height:100dvh;}
+.classic-ui [hidden],.classic-ui .garage-legacy,.classic-ui .sound-panel {display:none!important;}
+.classic-ui .topbar {min-height:64px;height:64px;padding:9px 24px;gap:20px;background:#142633;border-bottom:1px solid var(--line);}
+.classic-ui .brand {font:600 15px var(--display);letter-spacing:1.3px;gap:11px;}
+.classic-ui .classic-logo {display:grid;place-items:center;width:38px;height:36px;font:600 19px var(--display);letter-spacing:-1px;border:1px solid #7895a4;border-radius:3px;color:#c1d7df;}
+.classic-ui .brand small {display:block;margin-top:5px;font:9px var(--mono);letter-spacing:1.35px;color:#9aadb7;}
+.classic-ui .header-center {margin-left:auto;color:var(--muted);font:11px var(--sans);letter-spacing:0;}
+.classic-ui .connection-pill,.classic-ui .connection-pill.connected,.classic-ui .connection-pill.disconnected {border:0;padding:4px 0;background:transparent;font-size:11px;}
+.classic-ui .icon-button {width:44px;height:44px;border-color:#435c6c;border-radius:4px;color:#c1d7df;}
+.classic-ui .shell {display:block;min-height:calc(100dvh - 64px);}
+.classic-ui .workspace {display:grid;grid-template-columns:344px minmax(0,1fr);grid-template-rows:auto auto;gap:0;align-items:start;max-width:1800px;width:100%;margin:0 auto;padding:0;}
+.classic-ui .panel {background:var(--panel);border:0;border-radius:0;box-shadow:none;}
+.classic-ui .panel-heading {min-height:45px;padding:14px 18px;border-bottom:1px solid var(--line);gap:10px;}
+.classic-ui h2 {font:600 12px var(--display);letter-spacing:1.1px;text-transform:uppercase;}
+.classic-ui .control-panel {grid-column:1;grid-row:1;position:sticky;top:0;display:flex;flex-direction:column;width:100%;min-width:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);}
+.classic-ui .control-panel .panel-heading {padding:13px 18px;}
+.classic-ui .control-panel h2 {font-size:12px;}
+.classic-ui .audio-status {font:10px var(--sans);color:var(--muted);white-space:normal;text-align:right;}
+.classic-ui #engine-name {padding:16px 18px 10px;font:600 21px var(--display);letter-spacing:.1px;line-height:1.2;}
+.classic-ui #engine-name span {display:block;padding-top:5px;font:10px var(--mono);letter-spacing:.65px;color:var(--muted);}
+.classic-ui .garage-instruments {display:grid;grid-template-columns:1fr 1fr;gap:0;margin:0 18px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;}
+.classic-ui .rpm-reading {grid-column:1/-1;padding:5px 0 12px;border:0;}
+.classic-ui .reading-label {margin:0 0 4px;color:var(--muted);font:10px var(--sans);letter-spacing:.1px;}
+.classic-ui .rpm-reading strong {font:500 46px var(--display);color:#e7edf0;letter-spacing:-.6px;font-variant-numeric:tabular-nums;}
+.classic-ui .rpm-reading>div:not(.rpm-bar) {gap:9px;}
+.classic-ui .rpm-bar {height:3px;max-width:none;margin-top:10px;background:#344b59;}
+.classic-ui .rpm-bar span {height:3px;background:#84c6ce;}
+.classic-ui .rpm-bar i {background:#f19a58;}
+.classic-ui .reading {padding:0 0 11px;border:0;}
+.classic-ui .reading strong {font:500 19px var(--display);font-variant-numeric:tabular-nums;}
+.classic-ui .reading>div {gap:5px;}
+.classic-ui .reading>div span,.classic-ui .reading-unit {font:10px var(--mono);color:var(--muted);}
+.classic-ui .start-stop {padding:0 18px 14px;display:flex;}
+.classic-ui .start-stop button {min-height:46px;width:100%;padding:11px 14px;font:600 13px var(--sans);}
+.classic-ui .primary-button {background:#84c6ce;color:#122a35;border:1px solid #84c6ce;border-radius:4px;}
+.classic-ui .primary-button:hover {background:#a4d6dc;}
+.classic-ui #start[aria-pressed=true] {background:#21323d;color:#f2b28a;border-color:#88614c;}
+.classic-ui .secondary-button {background:#203947;border:1px solid #496373;border-radius:4px;color:#e7edf0;}
+.classic-ui .control-block {padding:12px 18px;border:0;border-top:1px solid var(--line);min-width:0;}
+.classic-ui .control-heading label,.classic-ui .control-label {font:600 12px var(--sans);letter-spacing:0;}
+.classic-ui .control-heading output {font:500 23px var(--display);color:#c1e2e5;}
+.classic-ui input[type=range] {height:36px;min-height:36px;margin:3px 0 0;accent-color:#84c6ce;touch-action:pan-y;}
+.classic-ui input[type=range]::-webkit-slider-thumb {min-width:20px;min-height:20px;}
+.classic-ui .range-endpoints {font:10px var(--sans);color:var(--muted);}
+.classic-ui .selected-gear {display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:9px;}
+.classic-ui .selected-gear>div {display:flex;flex-direction:column;gap:3px;}
+.classic-ui .selected-gear span {font:600 12px var(--sans);}
+.classic-ui .selected-gear small {font:10px var(--sans);color:var(--muted);}
+.classic-ui .selected-gear strong {font:500 37px var(--display);line-height:1;color:#b7d7e2;}
+.classic-ui .gear-control>.control-label {display:none;}
+.classic-ui .gear-buttons {gap:5px;margin:0;}
+.classic-ui .gear-buttons button {min-height:44px;min-width:0;padding:5px;flex:1;font:500 15px var(--display);background:#142a37;border:1px solid #496373;border-radius:4px;color:#d7e3e9;}
+.classic-ui .gear-buttons button.active {background:#9ec3d0;border-color:#9ec3d0;color:#122633;}
+.classic-ui .clutch-setting {margin-top:12px;}
+.classic-ui .setting-top {font:12px var(--sans);color:#c2d0d8;}
+.classic-ui .setting-top output {font:11px var(--mono);color:#e7edf0;}
+.classic-ui .classic-key-controls {display:flex;flex-direction:column;gap:10px;padding:13px 18px;border-top:1px solid var(--line);}
+.classic-ui .garage-ignition {display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.classic-ui .garage-ignition button {min-height:44px;padding:7px 5px;font:11px var(--sans);line-height:1.3;border:1px solid #496373;border-radius:4px;background:#19313f;color:#d8e5eb;touch-action:none;}
+.classic-ui .garage-ignition button[aria-pressed=true] {background:#254d4d;color:#c9eee5;border-color:#71a99e;}
+.classic-ui .garage-key-row>span {display:block;font:10px var(--sans);color:#a5b7c1;margin-bottom:5px;}
+.classic-ui .garage-key-row p {font:10px var(--sans);line-height:1.8;color:#c4d1d8;margin:0;}
+.classic-ui kbd {display:inline-block;padding:1px 4px;margin-right:2px;border:1px solid #536b79;border-radius:3px;background:#223c4b;font:10px var(--mono);line-height:1.5;color:#e7edf0;}
+.classic-ui .garage-key-row p kbd:not(:first-child) {margin-left:4px;}
+.classic-ui .garage-shift-keys {display:inline-block;}
+.classic-ui .garage-reset {padding:2px 18px 15px;}
+.classic-ui .garage-reset button {width:100%;min-height:44px;font:11px var(--sans);background:transparent;color:#bbcbd4;border-color:#415a69;}
+.classic-ui .main-column {grid-column:2;grid-row:1;display:flex;flex-direction:column;gap:0;min-width:0;}
+.classic-ui .section-page[data-page=mechanics] {display:block;min-width:0;}
+.classic-ui .engine-panel {display:flex;flex-direction:column;min-width:0;background:#101f2a;overflow:hidden;}
+.classic-ui .engine-panel>.engine-live {display:none;}
+.classic-ui .engine-live {font:11px var(--sans);color:var(--muted);white-space:nowrap;}
+.classic-ui .engine-dot {width:6px;height:6px;background:#6e899a;}
+.classic-ui .engine-dot.running {background:#84c6ce;}
+.classic-ui .garage-tuning-slot {min-width:0;border-top:1px solid #425966;background:#152733;}
+.classic-ui .garage-tuning-slot:empty {display:none;}
+.classic-ui .workspace-footer {grid-column:1/-1;grid-row:2;min-height:34px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 20px;margin:0;padding:9px 18px;border-top:1px solid var(--line);background:#132531;color:#93a8b6;font:9px var(--mono);letter-spacing:0;}
+.classic-ui .toast {background:#213d4d;border:1px solid #7397aa;border-radius:5px;font:12px var(--sans);max-width:calc(100vw - 28px);}
+.classic-ui .garage-connection-note {margin:0;padding:12px 18px;background:#3a3029;color:#f1c39d;font:12px/1.5 var(--sans);}
+.classic-ui button:focus-visible,.classic-ui select:focus-visible,.classic-ui input:focus-visible,.classic-ui a:focus-visible {outline:2px solid #b5e5ec;outline-offset:3px;}
+.classic-ui button:hover:not(:disabled) {filter:brightness(1.08);}
+
+@media(min-width:1600px) {
+  .classic-ui .workspace {grid-template-columns:364px minmax(0,1fr);border-inline:1px solid var(--line);}
+}
+@media(max-width:850px) and (min-width:751px) {
+  .classic-ui .workspace {grid-template-columns:304px minmax(0,1fr);}
+  .classic-ui .control-panel .panel-heading,.classic-ui .control-block,.classic-ui .classic-key-controls {padding-inline:14px;}
+  .classic-ui .garage-key-row p {font-size:9px;}
+}
+@media(max-width:750px) {
+  .classic-ui .topbar {height:64px;min-height:64px;padding:8px 12px;gap:10px;}
+  .classic-ui .brand {font-size:12px;letter-spacing:.7px;gap:9px;}
+  .classic-ui .brand small {font-size:8px;letter-spacing:1px;margin-top:4px;}
+  .classic-ui .classic-logo {width:32px;height:34px;font-size:18px;}
+  .classic-ui .header-center {display:none;}
+  .classic-ui .header-actions {margin-left:auto;}
+  .classic-ui .workspace {display:flex;flex-direction:column;}
+  .classic-ui .main-column {display:contents;}
+  .classic-ui .section-page[data-page=mechanics] {order:0;width:100%;}
+  .classic-ui .control-panel {order:1;position:static;border:0;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;}
+  .classic-ui .control-panel>.panel-heading {grid-column:1/-1;min-height:44px;padding:12px 16px;}
+  .classic-ui #engine-name {grid-column:1/-1;padding:15px 16px 4px;font-size:22px;}
+  .classic-ui .garage-instruments {grid-column:1/-1;grid-template-columns:1.2fr 1fr 1fr;align-items:center;margin:0 16px 12px;}
+  .classic-ui .rpm-reading {grid-column:auto;padding:8px 10px 10px 0;}
+  .classic-ui .rpm-reading strong {font-size:36px;}
+  .classic-ui .rpm-reading .reading-unit {font-size:9px;}
+  .classic-ui .rpm-bar {margin-top:7px;}
+  .classic-ui .reading {padding:7px 0 8px 12px;}
+  .classic-ui .reading strong {font-size:18px;}
+  .classic-ui .reading-label {font-size:10px;}
+  .classic-ui .start-stop {grid-column:1/-1;padding:0 16px 14px;}
+  .classic-ui .control-block {padding:13px 16px;}
+  .classic-ui .throttle-control,.classic-ui .gear-control,.classic-ui .classic-key-controls,.classic-ui .garage-reset {grid-column:1/-1;}
+  .classic-ui .control-block.throttle-control {grid-row:auto;}
+  .classic-ui .control-heading label,.classic-ui .setting-top {font-size:13px;}
+  .classic-ui .throttle-control input[type=range],.classic-ui .gear-control input[type=range] {height:44px;min-height:44px;}
+  .classic-ui .gear-buttons {gap:7px;}
+  .classic-ui .gear-buttons button {font-size:16px;min-height:45px;}
+  .classic-ui .classic-key-controls {padding:14px 16px;gap:12px;}
+  .classic-ui .garage-ignition button {font-size:12px;}
+  .classic-ui .garage-key-row p {font-size:11px;}
+  .classic-ui .garage-key-row>span {font-size:11px;}
+  .classic-ui .garage-reset {padding:0 16px 16px;}
+  .classic-ui .garage-tuning-slot {order:2;width:100%;}
+  .classic-ui .workspace-footer {order:3;width:100%;padding:11px 16px;line-height:1.6;}
+  .classic-ui #footer-state {display:none;}
+}
+@media(prefers-reduced-motion:reduce) {
+  .classic-ui .rpm-bar span {transition:none;}
+}

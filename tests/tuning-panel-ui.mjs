@@ -1,0 +1,53 @@
+import {build} from 'esbuild';
+import {chromium} from '@playwright/test';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+import {DEFAULT_TUNING} from '../native/tuning-settings.mjs';
+const bundle=await build({entryPoints:['src/tuning-panel.ts'],bundle:true,write:false,format:'iife',globalName:'TuningPanelModule',loader:{'.css':'empty'}});
+const browser=await chromium.launch({headless:true});
+const folder='evidence/tuning-sauger';mkdirSync(folder,{recursive:true});
+const report={passed:false,checks:[],screenshots:[],errors:[]};
+try{
+ const page=await browser.newPage({viewport:{width:1280,height:800}});page.on('pageerror',e=>report.errors.push(e.message));
+ await page.setContent(`<meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;background:#11232e}${readFileSync('src/tuning-panel.css','utf8')}</style><div id="mount"></div>`);
+ await page.addScriptTag({content:bundle.outputFiles[0].text});
+ await page.evaluate(()=>{
+  window.fixture={calls:[],resolve:null,reject:null};
+  window.fixture.panel=window.TuningPanelModule.installTuningPanel(document.getElementById('mount'),{onApply(selection){window.fixture.calls.push(selection);return new Promise((resolve,reject)=>{window.fixture.resolve=resolve;window.fixture.reject=reject;});}});
+ });
+ const selection=()=>page.evaluate(()=>window.fixture.panel.getSelection());
+ const installed=()=>page.evaluate(()=>window.fixture.panel.getAppliedSelection());
+ assert.deepEqual(await installed(),DEFAULT_TUNING);
+ const race=page.locator('[data-part="camshaft"][data-value="race"]');
+ await race.hover();assert.equal(await page.locator('[data-effect-name]').textContent(),'Racing-Nocken');assert.deepEqual(await selection(),DEFAULT_TUNING);
+ assert.ok(await page.locator('[data-traits] .negative').count()>0);assert.ok(await page.locator('[data-traits] .positive').count()>0);
+ await page.screenshot({path:`${folder}/desktop-hover.png`});report.screenshots.push('desktop-hover.png');
+ await race.click();assert.equal((await selection()).camshaft,'race');assert.equal(await page.locator('[data-apply]').isDisabled(),true);
+ assert.match(await page.locator('[data-fitment]').textContent(),/Titan/);await page.locator('[data-support]').click();assert.equal(await page.locator('[data-apply]').isDisabled(),false);
+ assert.match(await page.locator('[data-selection-count]').textContent(),/7.600/);
+ const wanted=await selection();await page.locator('[data-apply]').click();assert.equal(await page.locator('.tuning-workshop').getAttribute('aria-busy'),'true');assert.deepEqual(await installed(),DEFAULT_TUNING);
+ await page.evaluate(()=>window.fixture.reject(new Error('Test: fehlende native Bestätigung')));await page.waitForFunction(()=>document.querySelector('.tuning-workshop').getAttribute('aria-busy')==='false');
+ assert.match(await page.locator('[data-status]').textContent(),/Einbau nicht bestätigt/);assert.deepEqual(await installed(),DEFAULT_TUNING);
+ await page.locator('[data-apply]').click();await page.evaluate(()=>window.fixture.resolve());await page.waitForFunction(()=>document.querySelector('.tuning-workshop').getAttribute('aria-busy')==='false');assert.deepEqual(await installed(),wanted);
+ report.checks.push('Hover verändert keine Auswahl; Vor-/Nachteile und Kurve sichtbar','Racing-Stützteile erforderlich, ergänzbar und 7600-U/min-Vorschau','Fehlgeschlagener Einbau, Wiederholung und native Bestätigung bleiben getrennt');
+ const names=[];
+ for(let i=0;i<6;i++){await page.locator(`[data-group="${i}"]`).click();names.push(...await page.locator('[data-part] span').allTextContents());}
+ assert.ok(names.includes('Einzeldrosseln')&&names.includes('Racing-Kolben')&&names.includes('Mehrwinkel-Ventilsitze'));
+ assert.ok(!await page.locator('[data-preset]').count());report.checks.push('Alle sechs Teilegruppen und umfangreicher Teilekatalog erreichbar; keine Komfortpakete');
+ await page.locator('[data-group="0"]').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('[data-group="1"]').getAttribute('aria-selected'),'true');
+ const itb=page.locator('[data-part="throttleBody"][data-value="itb"]');await itb.focus();assert.equal(await page.locator('[data-effect-name]').textContent(),'Einzeldrosseln');report.checks.push('Tastaturnavigation und Fokusvorschau');
+ await page.setViewportSize({width:375,height:812});await itb.click();
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ const effectBox=await page.locator('.tuning-effect').boundingBox(),slotBox=await page.locator('[data-part="throttleBody"][data-value="itb"]').locator('..').locator('..').boundingBox();assert.ok(effectBox.y>=slotBox.y);
+ await page.locator('.tuning-effect').scrollIntoViewIfNeeded();await page.screenshot({path:`${folder}/mobile-effect.png`});report.screenshots.push('mobile-effect.png');
+ for(const box of await page.locator('button:visible,summary:visible').evaluateAll(nodes=>nodes.map(n=>({text:n.textContent,height:n.getBoundingClientRect().height}))))assert.ok(box.height>=44,box.text);
+ report.checks.push('375px ohne horizontalen Überlauf, Touchvorschau direkt unter dem Teil, Bedienelemente mindestens44px');
+ await page.locator('[data-metric="powerKw"]').click();assert.match(await page.locator('[data-chart]').getAttribute('aria-label'),/Leistung in kW/);
+ await page.evaluate(()=>{const curve=[1000,2000,3000].map(rpm=>({rpm,torqueNm:0,powerKw:0}));window.fixture.panel.setMeasuredComparison({selection:window.fixture.panel.getSelection(),baseline:curve,selected:curve,sourceLabel:'Native Testfixture mit Nullmoment'});});
+ assert.equal(await page.locator('[data-curve-source]').textContent(),'Native Messkurven');assert.equal(await page.locator('[data-chart]').evaluate(n=>/NaN|Infinity/.test(n.innerHTML)),false);
+ await page.evaluate(()=>window.fixture.panel.setMeasuredComparison(null));await page.locator('[data-reset]').click();await page.evaluate(()=>window.fixture.resolve());await page.waitForFunction(()=>document.querySelector('[data-installed]').textContent==='Serie eingebaut');assert.deepEqual(await installed(),DEFAULT_TUNING);
+ report.checks.push('Messkurvenherkunft und Nullkurven korrekt; Rückkehr zur bestätigten Serie');
+ await page.setViewportSize({width:1280,height:800});await page.locator('[data-group="0"]').click();await race.hover();await page.screenshot({path:`${folder}/desktop-final.png`});
+ assert.deepEqual(report.errors,[]);report.passed=true;
+}finally{writeFileSync(`${folder}/ui.json`,JSON.stringify(report,null,2));await browser.close();}
+console.log(JSON.stringify(report));

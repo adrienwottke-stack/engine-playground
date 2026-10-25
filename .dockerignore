@@ -1,0 +1,17 @@
+node_modules
+.git
+outputs
+work
+test-results
+evidence
+assets
+src
+tests
+native/source
+native/headless/obj
+native/headless/bin/*
+!native/headless/bin/engine-core
+native/headless/runtime
+native/headless/build-linux
+native/headless/objects.rsp
+native/runtime

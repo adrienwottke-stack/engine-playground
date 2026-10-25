@@ -1,0 +1,35 @@
+{
+  "format": "RGBA16F-CubeUV",
+  "width": 336,
+  "height": 256,
+  "channels": 4,
+  "byteOrder": "little-endian",
+  "byteLength": 688128,
+  "threeRevision": "186",
+  "mapping": "CubeUVReflectionMapping",
+  "colorSpace": "LinearSRGBColorSpace",
+  "minFilter": "LinearFilter",
+  "magFilter": "LinearFilter",
+  "flipY": false,
+  "generateMipmaps": false,
+  "generator": "scripts/bake-studio-environment.mjs",
+  "source": {
+    "width": 256,
+    "height": 128,
+    "projection": "equirectangular",
+    "signal": "Procedural neutral studio with three smooth rectangular softboxes; synthetic linear radiance, no measured HDRI."
+  },
+  "precision": "IEEE 754 binary16 RGBA. Linear HDR radiance; unused CubeUV atlas pixels are zero. GPU half-float arithmetic can vary slightly between browser/driver versions.",
+  "verification": {
+    "readback": "WebGL RGBA/HALF_FLOAT into Uint16Array",
+    "finiteNonnegative": true,
+    "positiveRgbComponents": 124416,
+    "minRgb": 0,
+    "maxRgb": 6.3125,
+    "meanRgb": 0.3810300235710447,
+    "reloadWithoutPmrem": true,
+    "metalSphereLitPixels": 2134,
+    "metalSpherePeakByte": 255
+  },
+  "sha256": "b1cc74df62c907ca425f692fb1534e6192ceddc4d8595713162d2ba62cd9c5b4"
+}

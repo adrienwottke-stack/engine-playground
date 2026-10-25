@@ -1,0 +1,50 @@
+.classic-ui .engine-three-panel {min-width:0;flex:1;background:#101f2a;}
+.classic-ui .engine-three-toolbar {display:flex;align-items:center;gap:12px;min-height:62px;padding:8px 18px;border-bottom:1px solid #344b59;background:#172d3c;}
+.classic-ui .three-presentations {display:flex;align-items:center;gap:3px;padding:3px;background:#0f202b;border:1px solid #3e5665;border-radius:5px;}
+.classic-ui .three-presentations button {min-height:40px;padding:8px 11px;border:1px solid transparent;border-radius:3px;background:transparent;color:#b5c7d1;font:11px var(--sans);white-space:nowrap;}
+.classic-ui .three-presentations button[aria-pressed="true"] {background:#d2e2e8;border-color:#e4f0f4;color:#142f40;}
+.classic-ui .three-presentations button:focus-visible {outline:2px solid #e2a360;outline-offset:2px;}
+.classic-ui .three-views {display:flex;align-items:center;gap:7px;min-width:0;}
+.classic-ui .three-views select,.classic-ui .three-views button {min-height:44px;font:11px var(--sans);background:#203b4c;border:1px solid #4b6676;border-radius:4px;color:#d7e6ee;}
+.classic-ui .three-views select {max-width:185px;padding:8px 29px 8px 10px;}
+.classic-ui .three-views button {padding:8px 11px;gap:6px;}
+.classic-ui .three-views button>span:first-child {font-size:20px;line-height:1;}
+.classic-ui .garage-view-status {margin-left:auto;}
+.classic-ui .garage-slow-control {margin-left:8px;}
+.classic-ui .garage-slow-control .check-control {min-height:44px;gap:7px;color:#d0dfe7;font:11px var(--sans);cursor:pointer;}
+.classic-ui .garage-slow-control input {width:16px;height:16px;accent-color:#84c6ce;}
+.classic-ui .engine-three-stage {position:relative;width:100%;height:clamp(470px,calc(100dvh - 162px),780px);min-width:0;overflow:hidden;background:#101f2a;}
+.classic-ui .engine-three-host {height:100%;width:100%;}
+.classic-ui #engine-3d-canvas {display:block;width:100%;height:100%;touch-action:none;outline:none;}
+.classic-ui #engine-3d-canvas:focus-visible {outline:2px solid #b5e5ec;outline-offset:-3px;}
+.classic-ui .three-stage-caption {position:absolute;bottom:15px;left:18px;right:18px;pointer-events:none;font:10px var(--sans);color:#9bb0be;letter-spacing:0;}
+.classic-ui .three-loading {position:absolute;top:46%;left:20px;right:20px;text-align:center;font:13px var(--sans);color:#b7cbd7;}
+.classic-ui .three-fallback {position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;padding:24px;background:#101f2a;color:#d8bdac;text-align:center;font:13px var(--sans);}
+.classic-ui .three-fallback button {min-height:44px;padding:10px 16px;border:1px solid #637e8e;border-radius:4px;background:#203b4c;color:#e7edf0;}
+.classic-ui .three-error {padding:15px;color:#eeb596;background:#20313c;}
+@media(max-width:1000px) and (min-width:751px) {
+  .classic-ui .engine-three-toolbar {gap:7px;padding-inline:12px;flex-wrap:wrap;}
+  .classic-ui .garage-view-status {display:none;}
+  .classic-ui .garage-slow-control {margin-left:auto;}
+  .classic-ui .three-views select {max-width:160px;}
+}
+@media(min-width:751px) and (max-width:1250px) {
+  .classic-ui .engine-three-toolbar {flex-wrap:wrap;gap:8px;}
+  .classic-ui .three-presentations {margin-right:auto;}
+  .classic-ui .garage-view-status {display:none;}
+}
+@media(max-width:750px) {
+  .classic-ui .engine-three-toolbar {min-height:112px;padding:8px 12px;gap:7px;flex-wrap:wrap;}
+  .classic-ui .three-presentations {width:100%;}
+  .classic-ui .three-presentations button {flex:1;min-height:44px;}
+  .classic-ui .three-views {flex:1;gap:6px;}
+  .classic-ui .three-views select {width:138px;max-width:138px;min-width:0;font-size:11px;padding-inline:8px 20px;}
+  .classic-ui .three-views button {width:44px;min-width:44px;padding:0;}
+  .classic-ui .three-views button>span:last-child {display:none;}
+  .classic-ui .garage-view-status {display:none;}
+  .classic-ui .garage-slow-control {margin-left:0;}
+  .classic-ui .garage-slow-control .check-control {font-size:11px;gap:5px;white-space:nowrap;}
+  .classic-ui .garage-slow-control input {width:16px;height:16px;}
+  .classic-ui .engine-three-stage {height:clamp(365px,53dvh,480px);}
+  .classic-ui .three-stage-caption {bottom:12px;left:12px;font-size:9px;}
+}

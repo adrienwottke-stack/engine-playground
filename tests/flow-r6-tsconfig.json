@@ -1,0 +1,4 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["../src/engine-flow-view.ts", "./flow-r6.test.ts"]
+}

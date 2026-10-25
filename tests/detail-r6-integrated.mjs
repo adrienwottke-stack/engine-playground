@@ -1,0 +1,368 @@
+/**
+ * Current EngineView/EngineThree integration, with the real workshop and controls.
+ * R6 actual-assembly comparison; frozen R5 baseline or released R6 delivery.
+ * Static inspection only: null telemetry, crank angle 1.1 rad, clock 0 s.
+ * Run only after the component owners have released their source changes.
+ * Builds into its own directory and serves it on a private ephemeral port.
+ * No main.ts, motor process, API, control lease, audio, or shared port 4196.
+ * This file is a prepared fixture. Its creation/syntax check is not a browser run.
+ */
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {createServer} from 'node:http';
+import {cp, mkdir, readFile, stat, writeFile} from 'node:fs/promises';
+import {dirname, extname, relative, resolve, sep} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {build} from 'esbuild';
+import {chromium} from '@playwright/test';
+
+const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const stage = ['before','root'].includes(process.argv[2]) ? process.argv[2] : 'after';
+const sourceFolder = stage === 'before' ? './evidence/detail-r6-integration/before-src' : stage === 'root' ? './evidence/detail-r6-integration/root-src' : './src';
+const delivery = resolve(project, 'dist/detail-r6-integrated', stage);
+const evidence = resolve(project, 'evidence/detail-r6-integrated', stage);
+const base = `/detail-r6-integrated/${stage}/`;
+const readyTimeout = 180_000;
+const pose = {state: null, crankAngleRad: 1.1, driveAngleRad: 1.1, clockSeconds: 0, boreMm: 84, strokeMm: 89.6, rodMm: 135};
+// Fixed world-space cameras inspect patches of the actual installed geometry.
+// No bounding-box fitting, material overrides, renderer replacement or product edit.
+const closeups = {
+  block: {preset:'intake',position:[-220,223,-518],target:[-100,126,-82]},
+  manifold: {preset:'exhaust',position:[-245,340,578],target:[-150,232,166]},
+  cooling: {preset:'front',position:[-765,360,-445],target:[-383,121,-61]},
+  flywheel: {preset:'exhaust',position:[724,185,367],target:[337,35,0]},
+};
+const report = {
+  passed: false, nativeRun: false, audioRun: false, pose, closeups,
+  scope: 'Actual EngineView -> EngineThree -> full workshop; static scene, no main.ts or physical telemetry.',
+  flowLimit: 'Null telemetry deliberately produces no flowing media or combustion. Flow mode checks visibility only.',
+  visibilityLimit: 'Group/material visibility is scene-graph visibility, not proof of on-screen pixels or lack of occlusion.',
+  performanceLimit: 'Static captures only; graphics adapter is recorded, with no hardware FPS or real-time claim.',
+  visualLimit: 'Screenshots still need visual review. A passed regression does not prove surface realism or an approved visual target.',
+  surfaceMetadata: 'Observes all serializable material userData/profile metadata without assuming names of the R5 shader detail fields.',
+  pageErrors: [], consoleErrors: [], requestFailures: [], httpFailures: [], forbiddenRequests: [], requests: [], captures: [], sourceChanges: [],
+};
+let browser, server;
+const hash = value => createHash('sha256').update(value).digest('hex');
+
+// The wrapper only observes the actual instance; it does not replace geometry,
+// materials, lighting, rendering, view selection, or the EngineView event paths.
+const entry = String.raw`
+import {EngineThree} from '${sourceFolder}/engine-three';
+import {installEngineView} from '${sourceFolder}/engine-view';
+import {copyConfig,FIRING_ORDER,TAU,mod} from '${sourceFolder}/model';
+const cfg=copyConfig();
+Object.assign(cfg.engine,{boreMm:84,strokeMm:89.6,rodMm:135});
+cfg.sound.preset='m54';
+const pose={state:null,crankAngleRad:1.1,driveAngleRad:1.1,clockSeconds:0};
+let captured:EngineThree|null=null;
+function illustrativeState(){
+  const state:any={rpm:900,ignition:true,source:'illustrative-fixture',cycles:[],valveCurves:{samples:[]}};
+  for(let id=1;id<=6;id++){
+    const offset=FIRING_ORDER.indexOf(id)*TAU*2/6,rows:number[][]=[],curves:number[][]=[];
+    for(let i=0;i<144;i++){
+      const p=mod(i/144*TAU*2-offset,TAU*2),intake=p>TAU&&p<TAU*1.5?Math.sin(p-TAU):0,exhaust=p>Math.PI&&p<TAU?Math.sin(p-Math.PI):0,burn=p<.7;
+      rows.push([burn?1800:130,burn?1700:exhaust>0?900:intake>0?320:600,intake*9.7,exhaust*9.2,intake*.42,exhaust*.35,burn?1:0]);curves.push([intake*9.7,exhaust*9.2]);
+    }
+    state.cycles.push({cylinder:id,samples:rows});state.valveCurves.samples.push(curves);
+  }
+  return state;
+}
+const originalCreate=EngineThree.create;
+EngineThree.create=async (...args:Parameters<typeof originalCreate>)=>{
+  captured=await originalCreate.apply(EngineThree,args);
+  return captured;
+};
+const view=installEngineView();
+const effective=(object:any):boolean=>!object?true:object.visible&&effective(object.parent);
+const closeups=${JSON.stringify(closeups)};
+let fixtureCamera:any=null;
+const describe=(value:any,depth=0,seen=new WeakSet<object>()):any=>{
+  if(value===null||value===undefined||typeof value==='string'||typeof value==='boolean')return value;
+  if(typeof value==='number')return Number.isFinite(value)?value:String(value);
+  if(typeof value==='function')return '[function '+(value.name||'anonymous')+']';
+  if(typeof value!=='object')return String(value);
+  if(value.isTexture)return {kind:'Texture',name:value.name||'',type:value.type,mapping:value.mapping};
+  if(depth>=6)return '[depth limit]';
+  if(seen.has(value))return '[circular]';
+  seen.add(value);
+  const result=Array.isArray(value)?value.map(item=>describe(item,depth+1,seen)):Object.fromEntries(Object.entries(value).map(([key,item])=>[key,describe(item,depth+1,seen)]));
+  seen.delete(value);return result;
+};
+const snapshot=()=>{
+  const diagnostics=view.diagnostics(),engine=captured;
+  if(!engine)return {diagnostics,pose};
+  const groups:any[]=[],materials=new Map<any,any>();
+  const radiatorMaterials=new Map<any,any>();
+  engine.scene.getObjectByName('Kuehler und Luefter zur Antriebseinsicht')?.traverse((object:any)=>{
+    if(!object.isMesh)return;
+    for(const material of Array.isArray(object.material)?object.material:[object.material]){
+      const item=radiatorMaterials.get(material)||{name:material.name,transparent:material.transparent,opacity:material.opacity,depthWrite:material.depthWrite,meshes:0};
+      item.meshes++;radiatorMaterials.set(material,item);
+    }
+  });
+  engine.scene.traverse((object:any)=>{
+    const visible=effective(object);
+    if(object.isGroup&&object.name)groups.push({name:object.name,localVisible:object.visible,sceneGraphVisible:visible});
+    if(!object.isMesh)return;
+    for(const material of Array.isArray(object.material)?object.material:[object.material]){
+      const profile=material.userData.engineSurface;
+      if(!profile)continue;
+      let item=materials.get(material);
+      if(!item){item={profile:profile.profile,revision:profile.revision,reflection:profile.reflection,
+        profileMetadata:describe(profile),materialUserData:describe(material.userData),
+        metalness:material.metalness,roughness:material.roughness,envMapIntensity:material.envMapIntensity,
+        vertexColors:material.vertexColors,transparent:material.transparent,opacity:material.opacity,
+        meshes:0,sceneGraphVisibleMeshes:0,examples:[]};materials.set(material,item);}
+      item.meshes++;if(visible)item.sceneGraphVisibleMeshes++;
+      if(object.name&&item.examples.length<5&&!item.examples.includes(object.name))item.examples.push(object.name);
+    }
+  });
+  return {diagnostics,pose,config:{engine:cfg.engine,tuning:cfg.tuning},host:{...engine.host.dataset},
+    groups,materialProfiles:[...materials.values()],radiatorMaterials:[...radiatorMaterials.values()],
+    fixtureCamera,actualCamera:{position:engine.camera.position.toArray(),target:engine.controls.target.toArray(),fov:engine.camera.fov,aspect:engine.camera.aspect,near:engine.camera.near,far:engine.camera.far,zoom:engine.camera.zoom},
+    canvas:{width:engine.renderer.domElement.width,height:engine.renderer.domElement.height,pixelRatio:engine.renderer.getPixelRatio()},programCount:engine.renderer.info.programs?.length??0};
+};
+(window as any).detailR6={view,snapshot,
+  demo:(running:boolean)=>{
+    (pose as any).state=illustrativeState();(pose as any).state.rpm=running?900:0;
+    pose.crankAngleRad=415/360*TAU;pose.driveAngleRad=TAU*20+pose.crankAngleRad;pose.clockSeconds=.4;
+    const label=running?'Illustrative Demo-Pose · synthetische Daten':'Illustrative Demo · Stillstand';
+    document.querySelector('.engine-live')!.textContent=label;
+    document.querySelector('header p')!.textContent=label+' · keine Messung, kein Ton, keine Motorverbindung.';
+    if(captured)(captured as any).studioDirty=true;
+  },
+  setAngle:(angle:number)=>{pose.driveAngleRad=angle;pose.crankAngleRad=(angle%(4*Math.PI)+4*Math.PI)%(4*Math.PI);},
+  clearCloseup:()=>{fixtureCamera=null;},
+  closeup:(id:keyof typeof closeups)=>{
+    if(!captured)throw new Error('Actual engine is not ready.');
+    const camera=closeups[id];if(!camera)throw new Error('Unknown fixed detail camera.');
+    const damping=captured.controls.enableDamping;
+    // Drain residual orbit damping before setting a reproducible camera only.
+    captured.controls.enableDamping=false;captured.controls.update();
+    captured.controls.target.fromArray(camera.target);captured.camera.position.fromArray(camera.position);
+    captured.controls.update();captured.controls.enableDamping=damping;
+    captured.controls.dispatchEvent({type:'change'});
+    fixtureCamera={id,...camera};
+  },
+};
+function frame(){view.render(pose.state,cfg,pose.crankAngleRad,pose.clockSeconds,pose.driveAngleRad);requestAnimationFrame(frame);}
+frame();
+`;
+
+const fixtureCss = `
+*{box-sizing:border-box}html,body{margin:0;min-width:0;background:#101f2a;color:#e0e8ec;font:13px/1.45 system-ui}
+body{--sans:system-ui,sans-serif}header{padding:12px 18px;border-bottom:1px solid #344b59}h1{font-size:18px;margin:0 0 4px}
+header p{margin:0;max-width:1000px;color:#a9bdc8}.workspace,.engine-panel{min-width:0;width:100%}
+[hidden]{display:none!important}.check-control{display:inline-flex;align-items:center}.engine-live{font-size:11px;color:#b8c9d1}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:750px){header{padding:10px 12px}h1{font-size:16px}header p{font-size:11px}}
+`;
+const html = `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>M54B30 · integrierter Detailstand R6</title><link rel="icon" href="data:,"><link rel="stylesheet" href="./fixture.css"><link rel="stylesheet" href="./engine-fixture.css"></head>
+<body class="classic-ui"><header><h1>M54B30 · integrierter Detailstand R6</h1><p>Statische Motorpose · Kurbelwinkel 1,1 rad · keine Motordaten, keine Audio- oder Kernverbindung. Echte Motoransicht mit aktueller Werkstattbeleuchtung.</p></header>
+<main class="workspace" data-current-page="mechanics"><section class="engine-panel"><span class="engine-live">Statische Prüfansicht</span><label class="check-control"><input id="slow" type="checkbox" disabled><span>Zeitlupe</span></label></section></main>
+<script type="module" src="./engine-fixture.js"></script></body></html>`;
+
+try {
+  await mkdir(delivery, {recursive: true});
+  await mkdir(evidence, {recursive: true});
+  const bundled = await build({
+    absWorkingDir: project, stdin: {contents: entry, resolveDir: project, loader: 'ts'},
+    bundle: true, write: false, format: 'esm', target: 'es2022', metafile: true,
+    outfile: resolve(delivery, 'engine-fixture.js'), define: {'import.meta.env.BASE_URL': JSON.stringify(base)},
+  });
+  const inputs = Object.keys(bundled.metafile.inputs).filter(path => path !== '<stdin>');
+  assert.ok(!inputs.some(path => /(?:^|[/\\])src[/\\](?:main|worker|audio|native-client)\.ts$/.test(path)), 'Unexpected application/backend entry in fixture');
+  const fixtureScript=relative(project,fileURLToPath(import.meta.url));
+  const manifest = {createdAt: new Date().toISOString(), pose, closeups, fixture:{path:fixtureScript,sha256:hash(await readFile(fileURLToPath(import.meta.url))),entrySha256:hash(entry)},outputs: [], sources: [], emptyOutDir: false};
+  for (const output of bundled.outputFiles) {
+    const name = relative(delivery, output.path);
+    assert.ok(name && !name.startsWith('..') && output.path.startsWith(delivery + sep));
+    await mkdir(dirname(output.path), {recursive: true});
+    await writeFile(output.path, output.contents);
+    manifest.outputs.push({path: name, bytes: output.contents.byteLength, sha256: hash(output.contents)});
+  }
+  for (const path of inputs.filter(path => !path.includes('node_modules'))) {
+    const contents = await readFile(resolve(project, path));
+    manifest.sources.push({path, sha256: hash(contents)});
+  }
+  // Copy only static renderer resources, never native/audio entry scripts.
+  for (const folder of ['models', 'textures']) await cp(resolve(project, 'public', folder), resolve(delivery, folder), {recursive: true});
+  for(const [name,contents] of [['fixture.css',fixtureCss],['index.html',html]]){
+    await writeFile(resolve(delivery,name),contents);
+    manifest.outputs.push({path:name,bytes:Buffer.byteLength(contents),sha256:hash(contents)});
+  }
+  await writeFile(resolve(evidence, 'source-manifest.json'), JSON.stringify(manifest, null, 2));
+
+  const origin = 'http://127.0.0.1:4196';
+  report.url = origin + base + 'index.html';
+  browser = await chromium.launch({headless: true, args: ['--enable-unsafe-swiftshader']});
+  const context = await browser.newContext({viewport: {width: 1280, height: 800}, deviceScaleFactor: 1, serviceWorkers: 'block'});
+  await context.route('**/*', async route => {
+    const request = route.request(), url = new URL(request.url());
+    report.requests.push({method: request.method(), path: url.pathname});
+    const forbidden = url.origin !== origin || !url.pathname.startsWith(base) || /\/(?:api|lease)(?:\/|$)|(?:native|engine)-audio|native-stream/i.test(url.pathname) || !['GET','HEAD'].includes(request.method());
+    if (forbidden) {report.forbiddenRequests.push(request.url());return route.abort();}
+    // A real index.html URL works with the existing server's directory handling.
+    return route.continue();
+  });
+  const page = await context.newPage();
+  page.setDefaultTimeout(readyTimeout);
+  page.on('pageerror', error => report.pageErrors.push(error.message));
+  page.on('console', message => {if (message.type() === 'error') report.consoleErrors.push(message.text());});
+  page.on('requestfailed', request => report.requestFailures.push({url:request.url(),failure:request.failure()?.errorText}));
+  page.on('response', response => {if (response.status() >= 400) report.httpFailures.push({url:response.url(),status:response.status()});});
+  await page.goto(report.url, {waitUntil:'domcontentloaded',timeout:readyTimeout});
+  await page.waitForFunction(() => window.detailR6?.view.diagnostics().ready || window.detailR6?.view.diagnostics().failed, undefined, {timeout:readyTimeout});
+  assert.equal(await page.evaluate(() => window.detailR6.view.diagnostics().failed), false, 'Actual EngineView initialization failed');
+
+  async function settle(presentation, camera, minFrame = 0) {
+    await page.waitForFunction(({presentation,camera,minFrame}) => {
+      const d=window.detailR6.view.diagnostics(),host=document.querySelector('.engine-three-host');
+      return d.ready&&!d.failed&&host.dataset.webgl==='ready'&&host.dataset.geometry==='84:89.6:135'&&d.scene.presentation===presentation&&d.scene.camera.preset===camera&&d.scene.frame>=minFrame;
+    }, {presentation,camera,minFrame}, {timeout:readyTimeout});
+  }
+  async function capture(viewport, presentation, camera, suffix='') {
+    const before = await page.evaluate(() => window.detailR6.view.diagnostics().scene.frame);
+    await settle(presentation, camera, before + 3);
+    const snapshot = await page.evaluate(() => window.detailR6.snapshot());
+    assert.equal(snapshot.diagnostics.component, 'engine');
+    assert.equal(snapshot.diagnostics.scene.component, 'engine');
+    assert.ok(snapshot.diagnostics.scene.assembly.revision > 0);
+    assert.equal(snapshot.diagnostics.scene.assembly.accessoryDrive.wheels.length,9);
+    assert.equal(snapshot.diagnostics.scene.assembly.accessoryDrive.belts.length,2);
+    assert.equal(snapshot.host.radiatorInspection,camera==='front'?'transparent':'solid');
+    assert.ok(snapshot.radiatorMaterials.length>0,'Actual radiator materials must be observed');
+    for(const material of snapshot.radiatorMaterials){
+      assert.equal(material.transparent,camera==='front','R4 radiator inspection transparency changed');
+      assert.ok(Math.abs(material.opacity-(camera==='front'?.1:1))<1e-9,'R4 radiator inspection opacity changed');
+      assert.equal(material.depthWrite,camera!=='front','R4 radiator inspection depth writing changed');
+    }
+    const vanos=snapshot.groups.find(group=>group.name==='M54B30 Doppel VANOS Stellkolben im Schnitt');
+    assert.ok(vanos);assert.equal(vanos.sceneGraphVisible,presentation==='cutaway');
+    assert.equal(snapshot.host.assemblyRevision, String(snapshot.diagnostics.scene.assembly.revision));
+    assert.ok(snapshot.materialProfiles.some(material => material.profile === 'cast-aluminium'), 'Actual casting material profile is absent');
+    assert.ok(snapshot.materialProfiles.every(material=>Number.isFinite(material.metalness)&&Number.isFinite(material.roughness)&&Number.isFinite(material.envMapIntensity)),'Actual profiled materials contain nonfinite values');
+    const visibility = snapshot.diagnostics.scene.visibility;
+    assert.equal(visibility.mechanical, presentation === 'cutaway');
+    assert.equal(visibility.housing, presentation !== 'flow');
+    assert.equal(visibility.extras, presentation !== 'flow');
+    assert.equal(visibility.closedHousing, presentation === 'closed');
+    assert.equal(visibility.studio, false);
+    assert.ok(visibility.flowGroups.length === 5 && visibility.flowGroups.every(value=>value === !(stage==='after'&&presentation==='flow')));
+    if(stage==='after'){
+      assert.equal(visibility.dedicatedFlow,presentation==='flow');
+      assert.equal(visibility.combustion,presentation==='cutaway');
+      assert.equal(visibility.portSpray,presentation==='cutaway');
+      assert.equal(snapshot.diagnostics.scene.gasFlow.cylinders,6);
+      if(!snapshot.pose.state){
+        assert.ok(snapshot.diagnostics.scene.gasFlow.sprayActivity.every(value=>value===0),'Missing telemetry cannot create spray');
+        assert.ok(snapshot.diagnostics.scene.gasFlow.routes.every(route=>route.rate===0),'Missing telemetry cannot create gas flow');
+      }
+    }
+    if(!snapshot.pose.state){
+      assert.ok(snapshot.diagnostics.scene.routes.every(route => !route.stream && !route.particles), 'Null telemetry must not invent flow');
+      assert.ok(snapshot.diagnostics.scene.parts.every(part=>!part.combustion.flame&&!part.combustion.spark&&!part.combustion.gas),'Null telemetry must not invent combustion');
+      assert.equal(snapshot.diagnostics.scene.assembly.exhaustPlumes?.visible??false,false,'Null telemetry must not invent exhaust plumes');
+    }
+    if (presentation === 'flow') assert.ok(snapshot.diagnostics.scene.routes.every(route => !route.pipe));
+    if(snapshot.fixtureCamera){
+      assert.equal(snapshot.fixtureCamera.preset,camera);
+      for(const key of ['position','target'])snapshot.actualCamera[key].forEach((value,index)=>assert.ok(Math.abs(value-snapshot.fixtureCamera[key][index])<1e-5,'Fixed test detail camera moved'));
+    }
+    const ui = await page.evaluate(() => ({
+      overflow:document.documentElement.scrollWidth>innerWidth,
+      presentation:document.querySelector('.engine-three-panel').dataset.presentation,
+      pressed:[...document.querySelectorAll('[data-presentation][aria-pressed="true"]')].map(button=>button.dataset.presentation),
+      camera:document.querySelector('#three-camera').value,
+      controls:[...document.querySelectorAll('.three-presentations button,.three-views select,.three-views button')].map(node=>({label:node.getAttribute('aria-label')||node.textContent.trim(),width:node.getBoundingClientRect().width,height:node.getBoundingClientRect().height})),
+    }));
+    assert.equal(ui.overflow, false);assert.deepEqual(ui.pressed, [presentation]);assert.equal(ui.camera, camera);
+    if (viewport === 'mobile') assert.ok(ui.controls.every(control => control.width >= 44 && control.height >= 44), 'Mobile renderer controls must be at least 44px');
+    const screenshot = `${viewport}-${presentation}-${camera}${suffix}.png`;
+    await page.screenshot({path:resolve(evidence,screenshot),fullPage:true,timeout:readyTimeout});
+    report.captures.push({viewport,presentation,camera,screenshot,ui,...snapshot});
+    return snapshot;
+  }
+  for (const [viewport,size] of [['desktop',{width:1280,height:800}],['mobile',{width:375,height:812}]]) {
+    await page.setViewportSize(size);
+    await page.evaluate(()=>window.detailR6.clearCloseup());
+    await page.locator('[data-presentation="closed"]').click();
+    for (const camera of ['intake','exhaust','front','top']) {
+      await page.locator('#three-camera').selectOption(camera);
+      await capture(viewport, 'closed', camera);
+    }
+    for(const [id,definition] of Object.entries(closeups)){
+      await page.locator('#three-camera').selectOption(definition.preset);
+      const beforeDetail=await page.evaluate(()=>window.detailR6.view.diagnostics().scene.frame);
+      await settle('closed',definition.preset,beforeDetail+3);
+      await page.evaluate(id=>window.detailR6.closeup(id),id);
+      await capture(viewport,'closed',definition.preset,`-${id}-detail`);
+      await page.evaluate(()=>window.detailR6.clearCloseup());
+    }
+    await page.locator('#three-camera').selectOption('front');
+    await page.evaluate(()=>window.detailR6.setAngle(4*Math.PI-.1));
+    const beforeWrap=await capture(viewport,'closed','front','-before-wrap');
+    await page.evaluate(()=>window.detailR6.setAngle(4*Math.PI+.1));
+    const afterWrap=await capture(viewport,'closed','front','-after-wrap');
+    assert.ok(Math.abs((afterWrap.diagnostics.scene.assembly.pump-beforeWrap.diagnostics.scene.assembly.pump)-.2*35/24)<1e-7,'fractional pulley motion must stay continuous through the wrapped engine cycle');
+    assert.ok(Math.abs(afterWrap.diagnostics.scene.assembly.timing.angle-(4*Math.PI+.1))<1e-9);
+    await page.evaluate(()=>window.detailR6.setAngle(1.1));
+    await page.locator('[data-presentation="cutaway"]').click();
+    await capture(viewport,'cutaway','front');
+    if(stage==='after'){
+      await page.locator('#three-camera').selectOption('section');
+      await capture(viewport,'cutaway','section');
+    }
+    await page.locator('[data-presentation="closed"]').click();
+    const beforeCamera = await page.evaluate(() => window.detailR6.view.diagnostics().scene.frame);
+    await page.locator('#three-camera').selectOption('exhaust');
+    await settle('closed','exhaust',beforeCamera + 3);
+    const fixedCamera = await page.evaluate(() => window.detailR6.view.diagnostics().scene.camera);
+    for (const presentation of ['cutaway','flow']) {
+      await page.locator(`[data-presentation="${presentation}"]`).click();
+      const snapshot = await capture(viewport,presentation,'exhaust');
+      for (const key of ['position','target']) snapshot.diagnostics.scene.camera[key].forEach((value,index) => assert.ok(Math.abs(value-fixedCamera[key][index]) < 1e-5, 'Changing presentation moved the fixed camera'));
+    }
+    await page.locator('#three-camera-reset').click();
+    await settle('flow','overview');
+    assert.equal(await page.locator('#three-camera').inputValue(),'overview');
+  }
+  if(stage==='after')for(const [viewport,size]of [['desktop',{width:1280,height:800}],['mobile',{width:375,height:812}]]){
+    await page.setViewportSize(size);await page.evaluate(()=>window.detailR6.clearCloseup());
+    await page.evaluate(()=>window.detailR6.demo(true));
+    await page.locator('button[data-presentation="flow"]').click();await page.locator('#three-camera').selectOption('exhaust');
+    const flowing=await capture(viewport,'flow','exhaust','-illustrative');
+    assert.ok(flowing.diagnostics.scene.gasFlow.sprayActivity.some(value=>value>0),'Illustrative inlet pose must show port spray');
+    assert.ok(flowing.diagnostics.scene.gasFlow.routes.some(route=>Math.abs(route.rate)>0),'Illustrative input must reach the installed layer');
+    await page.locator('button[data-presentation="cutaway"]').click();await page.locator('#three-camera').selectOption('intake');
+    const spray=await capture(viewport,'cutaway','intake','-illustrative-spray');
+    assert.equal(spray.diagnostics.scene.visibility.portSpray,true);assert.ok(spray.diagnostics.scene.gasFlow.sprayActivity.some(value=>value>0));
+    await page.locator('button[data-presentation="flow"]').click();await page.evaluate(()=>window.detailR6.demo(false));
+    const stopped=await capture(viewport,'flow','intake','-illustrative-stopped');
+    assert.ok(stopped.diagnostics.scene.gasFlow.sprayActivity.every(value=>value===0),'Stopped input must remove injection');
+  }
+  for(const source of manifest.sources){
+    const actual=hash(await readFile(resolve(project,source.path)));
+    if(actual!==source.sha256)report.sourceChanges.push({path:source.path,bundledSha256:source.sha256,currentSha256:actual});
+  }
+  assert.deepEqual(report.sourceChanges,[],'Source files changed while the captured fixture was running');
+  for (const key of ['pageErrors','consoleErrors','requestFailures','httpFailures','forbiddenRequests']) assert.deepEqual(report[key], [], key);
+  report.passed = true;
+} catch (error) {
+  report.failure = error instanceof Error ? error.stack : String(error);
+  process.exitCode = 1;
+} finally {
+  try {await browser?.close();} catch (error) {report.cleanupError=String(error);process.exitCode=1;}
+  if (server?.listening) await new Promise(done => server.close(done));
+  await mkdir(evidence, {recursive:true});
+  await writeFile(resolve(evidence, 'browser-audit.json'), JSON.stringify(report, null, 2));
+  console.log(JSON.stringify({passed:report.passed,nativeRun:false,captures:report.captures.length,
+    pageErrors:report.pageErrors,requestFailures:report.requestFailures,forbiddenRequests:report.forbiddenRequests,
+    failure:report.failure,evidence:relative(project,evidence)}));
+}
+
+
+
+

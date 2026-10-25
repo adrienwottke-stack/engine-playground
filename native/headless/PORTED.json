@@ -1,0 +1,21 @@
+{
+  "originalCommit": "85f7c3b959a908ed5232ede4f1a4ac7eafe6b630",
+  "changes": [
+    "Own console host and IPC/audio streaming",
+    "Zero-latency partitioned FFT convolution, direct first 128 taps; all original IR taps retained and tested against scalar FIR",
+    "Fixed PCM clock without DirectSound latency feedback; script-defined 10000 Hz physics without adaptive reduction",
+    "Windows AboveNormal process priority and optional 32 MB working-set protection",
+    "Piranha std::filesystem instead of Boost.Filesystem",
+    "Windows aligned allocation with matching free and correct size/alignment order",
+    "Clang template parameter shadow fix",
+    "Complete Matrix definition in solver template",
+    "C++17 inline constexpr constants instead of duplicate extern definitions",
+    "Explicit default gas Mix for Clang",
+    "RingBuffer m_start typo correction",
+    "Removed unused graphical delta.h include from Synthesizer",
+    "Runtime crank inertia, gear ratios, brake and mass update accessors",
+    "Optional explicit idle assist (off by default), pedal lag, sampled calculated cycle, derived telemetry and assumed heat fraction"
+  ],
+  "enginePhysics": "original algorithms; compatibility fixes and runtime accessors described above",
+  "license": "Retained original/dependency notices; no license assumption for Community Edition"
+}

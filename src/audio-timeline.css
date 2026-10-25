@@ -1,0 +1,11 @@
+.audio-timeline .timeline-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:12px 22px; }
+.audio-timeline .timeline-actions button { min-height:44px; }
+.audio-timeline .timeline-actions label { display:flex; align-items:center; flex-wrap:wrap; gap:10px; font-size:13px; color:var(--muted, #77949f); }
+.audio-timeline .timeline-screen { margin:4px 22px; padding:12px; background:#101c24; border:1px solid #30434c; border-radius:8px; }
+.audio-timeline canvas { display:block; width:100%; height:90px; }
+.audio-timeline .timeline-seek { display:flex; align-items:center; gap:14px; font-size:12px; color:#a3b9bf; }
+.audio-timeline .timeline-seek input { flex:1; min-width:0; height:44px; accent-color:#6dc9be; }
+.audio-timeline .timeline-readings { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; color:#dce8e7; font-size:12px; font-variant-numeric:tabular-nums; }
+.audio-timeline .timeline-status { color:#ddb17b; min-height:2em; }
+.audio-timeline button:focus-visible,.audio-timeline select:focus-visible,.audio-timeline input:focus-visible { outline:2px solid #6dc9be; outline-offset:3px; }
+@media(max-width:600px) { .audio-timeline .timeline-actions { padding:10px 14px; } .audio-timeline .timeline-screen { margin:4px 14px; } .audio-timeline .timeline-actions button { flex:1 1 130px; } .audio-timeline select { max-width:100%; min-height:44px; } }

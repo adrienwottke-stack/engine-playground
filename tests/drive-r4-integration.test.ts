@@ -1,0 +1,31 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as T from 'three';
+import {copyConfig} from '../src/model';
+import {assemblyDimensions} from '../src/engine-3d-model';
+import {buildWorkshopAssembly,animateWorkshopAssembly} from '../src/engine-3d-assembly';
+import {EngineDrivePhase} from '../src/engine-drive-phase';
+import {disposeSceneResources} from '../src/engine-three-resources';
+
+test('assembly connects both drive systems without overriding pulley ratios across a cycle wrap',()=>{
+  const scene=new T.Scene(),extras=new T.Group(),housing=new T.Group(),head=new T.Group();extras.add(head);scene.add(extras,housing);
+  const assembly=buildWorkshopAssembly({extras,housing,head,...assemblyDimensions(copyConfig()),mat:color=>new T.MeshStandardMaterial({color})});
+  assert.equal(assembly.accessoryDrive.root.parent,extras);assert.equal(assembly.timingDrive.root.parent,extras);
+  assert.equal(assembly.pulley,assembly.accessoryDrive.pulley);
+  assert.equal(assembly.accessoryDrive.wheels.length,9);assert.equal(assembly.accessoryDrive.belts.length,2);
+  const radiatorMaterials=new Set<T.Material>();assembly.radiator.traverse(p=>{if(p instanceof T.Mesh)for(const m of Array.isArray(p.material)?p.material:[p.material])radiatorMaterials.add(m);});
+  const unaffected=new Map<T.Material,number>();scene.traverse(p=>{if(p instanceof T.Mesh)for(const m of Array.isArray(p.material)?p.material:[p.material])if(!radiatorMaterials.has(m))unaffected.set(m,m.opacity);});
+  for(const material of radiatorMaterials)material.opacity=.1;
+  for(const [material,opacity] of unaffected)assert.equal(material.opacity,opacity,'radiator inspection must not fade block, pump or other shared surfaces');
+  for(const material of radiatorMaterials)material.opacity=1;
+  assert.ok(assembly.chain.every(c=>c.links.parent&&c.links.count>20),'instanced chains survive static batching');
+  const period=4*Math.PI,tracker=new EngineDrivePhase(),omega=20;
+  let angle=tracker.update({phase:period-.1,omega,elapsed:0,slow:false,active:true,native:{time:0,extrapolation:0}});
+  animateWorkshopAssembly(assembly,angle,0,0);const pumpBefore=assembly.pulley.rotation.x;
+  angle=tracker.update({phase:.1,omega,elapsed:.01,slow:false,active:true,native:{time:.01,extrapolation:0}});
+  animateWorkshopAssembly(assembly,angle,0,0);
+  assert.ok(Math.abs((assembly.pulley.rotation.x-pumpBefore)-.2*35/24)<1e-9,'pump uses its belt pitch ratio through the 720 degree boundary');
+  const inspection=assembly.timingDrive.root.getObjectByName('M54B30 Doppel VANOS Stellkolben im Schnitt');
+  assert.equal(inspection?.userData.cutawayOnly,true);
+  const result=disposeSceneResources(scene);assert.equal(result.instances,2,'both chain instance buffers are owned by the assembly');
+});

@@ -1,0 +1,127 @@
+import {build} from 'esbuild';
+import {chromium} from '@playwright/test';
+import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+import {DEFAULT_TUNING} from '../native/tuning-settings.mjs';
+
+const folder = 'evidence/automation-workshop-01';
+mkdirSync(folder, {recursive:true});
+const bundle = await build({entryPoints:['src/automation-workshop.ts'],bundle:true,write:false,format:'iife',globalName:'AutomationWorkshop',loader:{'.css':'empty'}});
+const browser = await chromium.launch({headless:true});
+const report = {passed:false, nativeRun:false, confirmation:'UI fixture only; no native engine commands', checks:[], errors:[], screenshots:[]};
+try {
+  const page = await browser.newPage({viewport:{width:1280,height:800}});
+  page.on('pageerror', error => report.errors.push(error.message));
+  await page.setContent(`<html lang="de"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;background:#101a22}${readFileSync('src/automation-workshop.css','utf8')}</style><div id="mount"></div></html>`);
+  await page.addScriptTag({content:bundle.outputFiles[0].text});
+  await page.evaluate(() => {
+    window.fixture = {calls:[], resolve:null, reject:null};
+    window.fixture.panel = window.AutomationWorkshop.installAutomationWorkshop(document.getElementById('mount'), {
+      onApply(selection) {
+        window.fixture.calls.push(selection);
+        return new Promise((resolve, reject) => {window.fixture.resolve=resolve;window.fixture.reject=reject;});
+      }
+    });
+  });
+  const selection = () => page.evaluate(() => window.fixture.panel.getSelection());
+  const installed = () => page.evaluate(() => window.fixture.panel.getAppliedSelection());
+  const idle = () => page.waitForFunction(() => document.querySelector('.automation-workshop').getAttribute('aria-busy')==='false');
+  assert.deepEqual(await installed(), DEFAULT_TUNING);
+  assert.equal(await page.locator('[role="tab"]').count(), 5);
+  await page.locator('[data-stage="1"]').click();
+  const race = page.locator('[data-part="camshaft"][data-value="race"]');
+  await race.hover();
+  assert.equal(await page.locator('[data-part-name]').textContent(), 'Racing-Nocken');
+  assert.deepEqual(await selection(), DEFAULT_TUNING);
+  assert.deepEqual(await installed(), DEFAULT_TUNING);
+  report.checks.push('Ansehen verändert weder Auswahl noch bestätigten Aufbau');
+  await race.click();
+  assert.equal((await selection()).camshaft, 'race');
+  assert.equal(await page.locator('[data-apply]').isDisabled(), true);
+  await page.locator('[data-support]').click();
+  assert.equal(await page.locator('[data-apply]').isDisabled(), false);
+  assert.notDeepEqual(await selection(), await installed());
+  const wanted = await selection();
+  await page.screenshot({path:`${folder}/desktop-draft.png`});
+  report.screenshots.push('desktop-draft.png');
+  report.checks.push('Unpassender Aufbau blockiert den Einbau; vorhandene Stützteile ergänzbar');
+  await page.locator('[data-apply]').click();
+  assert.equal(await page.locator('.automation-workshop').getAttribute('aria-busy'), 'true');
+  assert.equal(await page.locator('[data-stage="0"]').isDisabled(), true);
+  assert.deepEqual(await installed(), DEFAULT_TUNING);
+  await page.evaluate(() => window.fixture.reject(new Error('Test: Motorkern bestätigt nicht')));
+  await idle();
+  assert.match(await page.locator('[data-status]').textContent(), /Einbau nicht bestätigt/);
+  assert.deepEqual(await installed(), DEFAULT_TUNING);
+  await page.locator('[data-apply]').click();
+  await page.evaluate(() => window.fixture.resolve());
+  await idle();
+  assert.deepEqual(await installed(), wanted);
+  assert.match(await page.locator('[data-status]').textContent(), /Einbau bestätigt/);
+  report.checks.push('Promise: Sperre, Fehler ohne Einbau, erneuter Versuch, Bestätigung separat geprüft');
+  const keys = new Set();
+  for (let i=0; i<5; i++) {
+    await page.locator(`[data-stage="${i}"]`).click();
+    const more = page.locator('[data-more]');
+    if (await more.count()) await more.click();
+    for (const key of await page.locator('[data-part]:visible').evaluateAll(nodes => nodes.map(node => node.dataset.part))) keys.add(key);
+  }
+  assert.equal(keys.size, 23);
+  await page.locator('[data-stage="0"]').focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator('[data-stage="1"]').getAttribute('aria-selected'), 'true');
+  assert.equal(await page.locator('[data-stage="1"]').evaluate(node => node===document.activeElement), true);
+  await page.keyboard.press('End');
+  assert.equal(await page.locator('[data-stage="4"]').getAttribute('aria-selected'), 'true');
+  await page.keyboard.press('Home');
+  assert.equal(await page.locator('[data-stage="0"]').getAttribute('aria-selected'), 'true');
+  report.checks.push('Alle 23 Positionen erreichbar; Pfeiltasten, Home und End mit stabilem Fokus');
+  await page.locator('[data-part="flywheel"][data-value="light"]').focus();
+  assert.equal(await page.locator('[data-part-name]').textContent(), 'Leichtes Schwungrad');
+  assert.equal((await selection()).flywheel, 'standard');
+  await page.locator('[data-part="flywheel"][data-value="light"]').click();
+  await page.evaluate(() => window.fixture.panel.setApplied({...window.fixture.panel.getAppliedSelection(), filter:'sport'}));
+  assert.equal((await selection()).flywheel, 'light');
+  assert.equal((await installed()).filter, 'sport');
+  report.checks.push('Bestätigte externe Daten erhalten einen bereits geänderten Entwurf');
+  await page.evaluate(() => window.fixture.panel.setEngineRunning(true));
+  assert.match(await page.locator('[data-apply]').textContent(), /Motor stoppen/);
+  await page.setViewportSize({width:375,height:812});
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth<=innerWidth), true);
+  for (const selector of ['[data-apply]','[data-reset]','[data-more]','[data-metric="torqueNm"]']) assert.ok((await page.locator(selector).boundingBox()).height>=44, selector);
+  await page.screenshot({path:`${folder}/mobile-375.png`,fullPage:true});
+  report.screenshots.push('mobile-375.png');
+  report.checks.push('Echte 375px-Darstellung ohne horizontalen Seitenüberlauf');
+  await page.locator('[data-metric="powerKw"]').click();
+  assert.match(await page.locator('[data-chart]').getAttribute('aria-label'), /Leistung in kW/);
+  assert.equal(await page.locator('[data-curve-source]').textContent(), 'Modellvorschau · geschätzt');
+  await page.evaluate(() => {
+    const curve=[1000,2000,3000].map(rpm => ({rpm,torqueNm:0,powerKw:0}));
+    window.fixture.panel.setMeasuredComparison({selection:window.fixture.panel.getSelection(),baseline:curve,selected:curve,sourceLabel:'Native Schnittstelle: Nullkurven-Testfixture, keine reale Messung'});
+  });
+  assert.equal(await page.locator('[data-curve-source]').textContent(), 'Native Messkurven');
+  assert.equal(await page.locator('[data-chart]').evaluate(node => /NaN|Infinity/.test(node.innerHTML)), false);
+  await page.locator('[data-part="flywheel"][data-value="ultralight"]').hover();
+  assert.equal(await page.locator('[data-curve-source]').textContent(), 'Modellvorschau · geschätzt');
+  report.checks.push('Geschätzte Vorschau und passende Messschnittstelle getrennt; Nullkurven ohne ungültige Koordinaten');
+  await page.evaluate(() => window.fixture.panel.setMeasuredComparison(null));
+  const calls = await page.evaluate(() => window.fixture.calls.length);
+  await page.locator('[data-reset]').click();
+  assert.deepEqual(await selection(), DEFAULT_TUNING);
+  assert.equal(await page.evaluate(() => window.fixture.calls.length), calls);
+  assert.notDeepEqual(await installed(), DEFAULT_TUNING);
+  report.checks.push('Serie vormerken erfordert einen ausdrücklichen Einbau');
+  await page.setViewportSize({width:1280,height:800});
+  await page.locator('[data-stage="2"]').click();
+  await page.locator('[data-part="intake"][data-value="sport"]').hover();
+  await page.screenshot({path:`${folder}/desktop-intake.png`});
+  report.screenshots.push('desktop-intake.png');
+  await page.evaluate(() => window.fixture.panel.destroy());
+  assert.equal(await page.locator('.automation-workshop').count(), 0);
+  assert.deepEqual(report.errors, []);
+  report.passed = true;
+} finally {
+  writeFileSync(`${folder}/ui.json`, JSON.stringify(report,null,2));
+  await browser.close();
+}
+console.log(JSON.stringify(report));

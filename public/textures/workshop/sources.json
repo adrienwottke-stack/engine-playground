@@ -1,0 +1,56 @@
+[
+  {
+    "asset": "concrete_floor_worn_001",
+    "map": "diffuse",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor_worn_001/concrete_floor_worn_001_diff_1k.jpg",
+    "file": "concrete_floor_worn_001_diff_1k.jpg",
+    "bytes": 118806,
+    "md5": "e35597cca586150b1ab2aa9a331a39c5",
+    "license": "CC0"
+  },
+  {
+    "asset": "concrete_floor_worn_001",
+    "map": "nor_gl",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl_1k.jpg",
+    "file": "concrete_floor_worn_001_nor_gl_1k.jpg",
+    "bytes": 110906,
+    "md5": "9de6626758f8793b71182b892c110827",
+    "license": "CC0"
+  },
+  {
+    "asset": "concrete_floor_worn_001",
+    "map": "rough",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor_worn_001/concrete_floor_worn_001_rough_1k.jpg",
+    "file": "concrete_floor_worn_001_rough_1k.jpg",
+    "bytes": 181942,
+    "md5": "b158eae73029ac6a849481274a0e1b35",
+    "license": "CC0"
+  },
+  {
+    "asset": "painted_plaster_wall",
+    "map": "diffuse",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/painted_plaster_wall/painted_plaster_wall_diff_1k.jpg",
+    "file": "painted_plaster_wall_diff_1k.jpg",
+    "bytes": 686726,
+    "md5": "15ba8c1f63a5ab412b1eabe31728540a",
+    "license": "CC0"
+  },
+  {
+    "asset": "painted_plaster_wall",
+    "map": "nor_gl",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/painted_plaster_wall/painted_plaster_wall_nor_gl_1k.jpg",
+    "file": "painted_plaster_wall_nor_gl_1k.jpg",
+    "bytes": 900461,
+    "md5": "43fff290583dbdfc9bfa088a2750e840",
+    "license": "CC0"
+  },
+  {
+    "asset": "painted_plaster_wall",
+    "map": "rough",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/painted_plaster_wall/painted_plaster_wall_rough_1k.jpg",
+    "file": "painted_plaster_wall_rough_1k.jpg",
+    "bytes": 354762,
+    "md5": "e076a6360329a2bc18c7397dc50c074a",
+    "license": "CC0"
+  }
+]

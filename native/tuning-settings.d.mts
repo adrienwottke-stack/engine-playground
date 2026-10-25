@@ -1,0 +1,37 @@
+export type TuningSelection = {
+  camshaft: 'standard' | 'sport' | 'supersport' | 'race';
+  flywheel: 'standard' | 'light' | 'ultralight';
+  intake: 'standard' | 'sport' | 'race';
+  exhaust: 'standard' | 'sport' | 'race';
+  response: 'standard' | 'comfort' | 'sport';
+  filter:'standard'|'sport'; throttleBody:'standard'|'large'|'itb'; runners:'standard'|'long'|'short';
+  head:'standard'|'ported'|'race'; seats:'standard'|'multiangle'; valves:'standard'|'large';
+  valveSprings:'standard'|'sport'|'race'; retainers:'standard'|'titanium'; lifters:'standard'|'solid';
+  pistons:'standard'|'high'|'race'; rods:'standard'|'light'; exhaustDiameter:'standard'|'large'|'race';
+  catalyst:'standard'|'sport'|'straight'; muffler:'standard'|'sport'|'race'; ignition:'standard'|'torque'|'race';
+  mixture:'standard'|'power'; camTiming:'standard'|'torque'|'topend'; idle:'standard'|'raised'|'race'; revLimit:'auto'|'street'|'race';
+};
+export type TuningPreset = 'standard' | 'comfort' | 'sport';
+export const DEFAULT_TUNING: Readonly<TuningSelection>;
+export const TUNING_PRESETS: Readonly<Record<TuningPreset, Readonly<TuningSelection>>>;
+export const TUNING_CHOICES: Readonly<{[K in keyof TuningSelection]: readonly TuningSelection[K][]}>;
+export function tuningRequirements(raw?:unknown): {key:keyof TuningSelection;value:string;label:string}[];
+export function completeTuningSupport(raw?:unknown): TuningSelection;
+export function validateTuning(raw?: unknown): TuningSelection;
+export function tuningKey(raw?: unknown): string;
+export function tuningFromKey(key: unknown): TuningSelection;
+export function tuningParameters(raw?: unknown, engine?: 'm52'|'m54'): {
+  intakeDurationDeg: number; exhaustDurationDeg: number; intakeLiftMm: number; exhaustLiftMm: number;
+  flywheelMassKg: number; crankInertiaKgM2: number; intakeCfm: number;
+  exhaustOutletCfm: number; exhaustPrimaryCfm: number; exhaustPrimaryInch: number; throttleGamma: number;
+  headFlowScale:number;compressionRatio:number;chamberCc:number;pistonMassG:number;rodMassG:number;
+  runnerLengthInch:number;runnerCfm:number;plenumL:number;intakeCenterDeg:number;exhaustCenterDeg:number;
+  timingMidDeg:number;timingTopDeg:number;molecularAfr:number;idlePlate:number;requestedRedlineRpm:number;
+  valvetrainCapacityRpm:number;redlineRpm:number;exhaustAudioScale:number;
+  exhaustLengthM:number;exhaustDiameterMm:number;exhaustVelocityDecay:number;
+  camLobeGamma:number;camOverlapAt50Deg:number;
+  camBurningRandomness:number;camDilutionTolerance:number;
+  camLowEfficiencyAttenuation:number;
+};
+export function applyM52Tuning(base: string, raw?: unknown): string;
+export function applyM54Tuning(base: string, raw?: unknown): string;
