@@ -1,5 +1,7 @@
 # Adrien Wottke · Engineering & Software
 
+**Die aktuelle zentrale Übersicht befindet sich im eigenen Repository: [Adrien Wottke · Projektportfolio](https://github.com/adrienwottke-stack/project-portfolio).**
+
 Ich studiere Maschinenbau und entwickle praktische Software- und Engineering-Projekte mit Unterstützung von KI-Werkzeugen. Diese Übersicht führt zu ausgewählten, bereinigten Quellcode-Arbeitsproben.
 
 Die Repositories zeigen den technischen Entwicklungsstand und verwendete Ansätze. Die Entwicklung mit KI-Unterstützung ist in den Projekten offengelegt. Technische Tests und ein erreichbarer Prototyp sind getrennt von nachgewiesenem Kundennutzen oder regelmäßiger Nutzung.
