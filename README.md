@@ -1,5 +1,6 @@
 # Engine Playground
 
+[Alle öffentlichen Arbeitsproben im Überblick](https://github.com/adrienwottke-stack/engine-playground/blob/main/PORTFOLIO.md)
 Interaktiver Motoren-Lernsimulator mit 3D-Ansicht, Kühlungsmodell und nativer Audio-Bridge.
 
 ## Projekt und Beitrag
